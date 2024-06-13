@@ -46,6 +46,7 @@ func main() {
 	rootCmd.AddCommand(
 		walletCommand(),
 		apiCommand(),
+		mnemonicCommand(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
