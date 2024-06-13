@@ -25,6 +25,12 @@ const (
 	programName = "bursa"
 )
 
+var (
+	mnemonic            string
+	verificationKeyFile string
+	signingKeyFile      string
+)
+
 func main() {
 	// Configure logging
 	logging.Setup()
@@ -46,8 +52,15 @@ func main() {
 	rootCmd.AddCommand(
 		walletCommand(),
 		apiCommand(),
+		addressCommand(),
 		mnemonicCommand(),
 	)
+
+	rootCmd.PersistentFlags().StringVar(&mnemonic, "from-mnemonic", "", "Provides mnemonic on cli")
+	rootCmd.PersistentFlags().StringVar(&verificationKeyFile, "verification-key-file", "", "write vkey to")
+	rootCmd.PersistentFlags().StringVar(&signingKeyFile, "signing-key-file", "", "write skey to")
+
+	rootCmd.MarkFlagRequired("verification-key-file")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
