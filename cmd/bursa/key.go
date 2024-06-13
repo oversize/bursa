@@ -18,39 +18,36 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/spf13/cobra"
-
 	"github.com/blinklabs-io/bursa"
+	"github.com/spf13/cobra"
 )
 
-var (
-	size int
-)
-
-func mnemonicCommand() *cobra.Command {
-	mnemonicCommand := cobra.Command{
-		Use:   "mnemonic",
-		Short: "Command to create mnemonic (recovery-phrase)",
+func keyCommand() *cobra.Command {
+	keyCommand := cobra.Command{
+		Use:   "key",
+		Short: "Key commands",
 	}
 
-	mnemonicCommand.AddCommand(
-		mnemonicCreateCommand(),
+	keyCommand.AddCommand(
+		keyCreateCommand(),
 	)
-	return &mnemonicCommand
+	return &keyCommand
 }
 
-func mnemonicCreateCommand() *cobra.Command {
-	mnemonicCreateCommand := cobra.Command{
+func keyCreateCommand() *cobra.Command {
+	keyCreateCommand := cobra.Command{
 		Use:   "create",
-		Short: "Creates a new mnemonic",
+		Short: "Creates new root key from mnemonic",
 		Run: func(cmd *cobra.Command, args []string) {
-			mnemonic, err := bursa.NewMnemonic()
+			fmt.Printf("Menemonic %s\n", mnemonic)
+			rootkey, err := bursa.GetRootKeyFromMnemonic(mnemonic)
 			if err != nil {
-				log.Fatalf("failed to load mnemonic: %s", err)
+				log.Fatalf("create rootkey failed: %s", err.Error())
 			}
-			fmt.Println(mnemonic)
+
+			fmt.Println(rootkey)
 		},
 	}
 
-	return &mnemonicCreateCommand
+	return &keyCreateCommand
 }
