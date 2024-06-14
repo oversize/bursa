@@ -16,15 +16,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/spf13/cobra"
 
 	"github.com/blinklabs-io/bursa"
-)
-
-var (
-	size int
 )
 
 func mnemonicCommand() *cobra.Command {
@@ -32,25 +27,24 @@ func mnemonicCommand() *cobra.Command {
 		Use:   "mnemonic",
 		Short: "Command to create mnemonic (recovery-phrase)",
 	}
-
+	mnemonicCreateCommand := cobra.Command{
+		Use:   "create",
+		Short: "Create new mnemonic",
+		RunE:  createMnemonic,
+	}
 	mnemonicCommand.AddCommand(
-		mnemonicCreateCommand(),
+		&mnemonicCreateCommand,
 	)
+
 	return &mnemonicCommand
 }
 
-func mnemonicCreateCommand() *cobra.Command {
-	mnemonicCreateCommand := cobra.Command{
-		Use:   "create",
-		Short: "Creates a new mnemonic",
-		Run: func(cmd *cobra.Command, args []string) {
-			mnemonic, err := bursa.NewMnemonic()
-			if err != nil {
-				log.Fatalf("failed to load mnemonic: %s", err)
-			}
-			fmt.Println(mnemonic)
-		},
+func createMnemonic(cmd *cobra.Command, args []string) error {
+	mnemonic, err := bursa.NewMnemonic()
+	if err != nil {
+		return err
 	}
+	fmt.Print(mnemonic)
 
-	return &mnemonicCreateCommand
+	return nil
 }

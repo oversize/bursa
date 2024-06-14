@@ -15,7 +15,7 @@
 package main
 
 import (
-	"os"
+	"log"
 
 	"github.com/blinklabs-io/bursa/internal/logging"
 	"github.com/spf13/cobra"
@@ -26,9 +26,14 @@ const (
 )
 
 var (
-	mnemonic            string
-	verificationKeyFile string
-	signingKeyFile      string
+	mnemonic                   string
+	verificationKeyFile        string
+	paymentVerificationKeyFile string
+	stakeVerificationKeyFile   string
+	signingKeyFile             string
+	extendedSigningKeyFile     string
+	testnetMagic               string
+	outFile                    string
 )
 
 func main() {
@@ -53,16 +58,21 @@ func main() {
 		walletCommand(),
 		apiCommand(),
 		addressCommand(),
+		keyCommand(),
 		mnemonicCommand(),
 	)
 
 	rootCmd.PersistentFlags().StringVar(&mnemonic, "from-mnemonic", "", "Provides mnemonic on cli")
 	rootCmd.PersistentFlags().StringVar(&verificationKeyFile, "verification-key-file", "", "write vkey to")
 	rootCmd.PersistentFlags().StringVar(&signingKeyFile, "signing-key-file", "", "write skey to")
+	rootCmd.PersistentFlags().StringVar(&testnetMagic, "testnet-magic", "", "testnet magic")
+	rootCmd.PersistentFlags().StringVar(&outFile, "out-file", "", "out-file")
+	rootCmd.PersistentFlags().StringVar(&paymentVerificationKeyFile, "payment-verification-key-file", "", "")
+	rootCmd.PersistentFlags().StringVar(&stakeVerificationKeyFile, "stake-verification-key-file", "", "")
 
 	rootCmd.MarkFlagRequired("verification-key-file")
 
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
+		log.Fatal(err.Error())
 	}
 }

@@ -15,11 +15,16 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"encoding/json"
+	"os"
 
 	"github.com/blinklabs-io/bursa"
 	"github.com/spf13/cobra"
+)
+
+var (
+	// as long as bursa has no state, will always be 0?
+	paymentId, accountId, stakeId = 0, 0, 0
 )
 
 func keyCommand() *cobra.Command {
@@ -28,26 +33,104 @@ func keyCommand() *cobra.Command {
 		Short: "Key commands",
 	}
 
+	keyPaymentCommand := cobra.Command{
+		Use:   "payment",
+		Short: "Create new payment key (from mnemonic)",
+		RunE:  createPaymentKey,
+	}
+	keyStakingCommand := cobra.Command{
+		Use:   "staking",
+		Short: "Create new staking key (from mnemonic)",
+		RunE:  createStakingKey,
+	}
 	keyCommand.AddCommand(
-		keyCreateCommand(),
+		&keyPaymentCommand,
+		&keyStakingCommand,
 	)
 	return &keyCommand
 }
 
-func keyCreateCommand() *cobra.Command {
-	keyCreateCommand := cobra.Command{
-		Use:   "create",
-		Short: "Creates new root key from mnemonic",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Menemonic %s\n", mnemonic)
-			rootkey, err := bursa.GetRootKeyFromMnemonic(mnemonic)
-			if err != nil {
-				log.Fatalf("create rootkey failed: %s", err.Error())
-			}
-
-			fmt.Println(rootkey)
-		},
+func createPaymentKey(cmd *cobra.Command, args []string) error {
+	rootKey, err := bursa.GetRootKeyFromMnemonic(mnemonic)
+	if err != nil {
+		return err
 	}
 
-	return &keyCreateCommand
+	accountKey := bursa.GetAccountKey(rootKey, uint(accountId))
+	paymentKey := bursa.GetPaymentKey(accountKey, uint32(paymentId))
+
+	if verificationKeyFile != "" {
+		paymentVKey := bursa.GetPaymentVKey(paymentKey)
+		err = writeKeyFile(paymentVKey, verificationKeyFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	if signingKeyFile != "" {
+		paymentSKey := bursa.GetPaymentSKey(paymentKey)
+		err = writeKeyFile(paymentSKey, signingKeyFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	if extendedSigningKeyFile != "" {
+		paymentExtendedSKey := bursa.GetPaymentExtendedSKey(paymentKey)
+		err = writeKeyFile(paymentExtendedSKey, extendedSigningKeyFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func createStakingKey(cmd *cobra.Command, args []string) error {
+	rootKey, err := bursa.GetRootKeyFromMnemonic(mnemonic)
+	if err != nil {
+		return err
+	}
+
+	accountKey := bursa.GetAccountKey(rootKey, uint(accountId))
+	stakeKey := bursa.GetStakeKey(accountKey, uint32(stakeId))
+
+	if verificationKeyFile != "" {
+		stakingVKey := bursa.GetStakeVKey(stakeKey)
+		err = writeKeyFile(stakingVKey, verificationKeyFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	if signingKeyFile != "" {
+		stakingSKey := bursa.GetStakeSKey(stakeKey)
+		err = writeKeyFile(stakingSKey, signingKeyFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	if extendedSigningKeyFile != "" {
+		stakingExtendedSKey := bursa.GetStakeExtendedSKey(stakeKey)
+		err = writeKeyFile(stakingExtendedSKey, extendedSigningKeyFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func writeKeyFile(keyFile bursa.KeyFile, filePath string) error {
+	f, err := json.MarshalIndent(keyFile, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(filePath, f, 0600)
+	if err != nil {
+		return err
+	}
+	return nil
 }

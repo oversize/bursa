@@ -16,7 +16,7 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/blinklabs-io/bursa"
@@ -28,55 +28,54 @@ func addressCommand() *cobra.Command {
 		Use:   "address",
 		Short: "Address commands",
 	}
+	addressCreateCommand := cobra.Command{
+		Use:   "create",
+		Short: "Create address from vkey (payment & staking)",
+		RunE:  createAddress,
+	}
 
 	addressCommand.AddCommand(
-		addressKeygenCommand(),
+		&addressCreateCommand,
 	)
 	return &addressCommand
 }
 
-func addressKeygenCommand() *cobra.Command {
-	walletCreateCommand := cobra.Command{
-		Use:   "key-gen",
-		Short: "Creates payment key pair from mnemonic",
-		Run:   runAddressKeygenCommand,
-	}
-
-	return &walletCreateCommand
-}
-
-func runAddressKeygenCommand(cmd *cobra.Command, args []string) {
-	paymentId, accountId := 0, 0 // as long as bursa has no state, will always be 0?
-	rootKey, err := bursa.GetRootKeyFromMnemonic(mnemonic)
-	if err != nil {
-		log.Fatalf("error creating root key: %s", err.Error())
-	}
-	// bursa should not force me to know about uint/uint32; Just accept int and
-	// provide an error if out of range?
-	accountKey := bursa.GetAccountKey(rootKey, uint(accountId))
-	paymentKey := bursa.GetPaymentKey(accountKey, uint32(paymentId))
-	paymentVKey := bursa.GetPaymentVKey(paymentKey)
-	paymentSKey := bursa.GetPaymentSKey(paymentKey)
-
-	err = writeKeyFile(paymentVKey, verificationKeyFile)
-	if err != nil {
-		log.Fatalf("error writing %s: %s", verificationKeyFile, err.Error())
-	}
-	err = writeKeyFile(paymentSKey, signingKeyFile)
-	if err != nil {
-		log.Fatalf("error writing %s: %s", signingKeyFile, err.Error())
-	}
-}
-
-func writeKeyFile(keyFile bursa.KeyFile, filePath string) error {
-	f, err := json.MarshalIndent(keyFile, "", "    ")
+func createAddress(cmd *cobra.Command, args []string) error {
+	pKey, err := readKeyFile(paymentVerificationKeyFile)
 	if err != nil {
 		return err
 	}
-
-	err = os.WriteFile(filePath, f, 0600)
+	sKey, err := readKeyFile(stakeVerificationKeyFile)
 	if err != nil {
 		return err
 	}
+	fmt.Print(pKey)
+	fmt.Print(sKey)
+
 	return nil
 }
+
+func readKeyFile(keyFile string) (*bursa.KeyFile, error) {
+	k, err := os.ReadFile(keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("could not read %s ", keyFile)
+	}
+	key := bursa.KeyFile{}
+	err = json.Unmarshal(k, &key)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal %s", keyFile)
+	}
+	return &key, nil
+}
+
+/*
+func runPaymentKeygenCommand(cmd *cobra.Command, args []string) error {
+
+		--payment-verification-key-file payment.vkey \
+		--out-file payment.addr \
+		--testnet-magic 2
+
+
+	return nil
+}
+*/
